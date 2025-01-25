@@ -34,38 +34,35 @@ class ShelterResource extends Resource
                 TextInput::make('phone_number')->required(),
                 TextInput::make('email')->required()->unique(),
                 Textarea::make('description')->required(),
-    
-                FileUpload::make('imageable')
-                ->label('Shelter Image')
-                ->image()
-                ->directory('shelters')
-                ->multiple()
-                ->maxParallelUploads(1)
-                ->nullable()
-                ->disk('public')
-                ->reactive()
-                ->afterStateUpdated(function ($state, callable $set) {
-                    if ($state) {
-                        foreach ($state as $file) {
-                            // Tároljuk a fájlt
-                            $path = $file->store('shelters', 'public');
             
-                            // Kép létrehozása az Image táblában (imageable_id = null)
-                            Image::create([
-                                'path' => $path,
-                                'imageable_type' => Shelter::class,
-                                'imageable_id' => null, // Ideiglenesen null marad
-                            ]);
-                            $set('imageable', []);
+                FileUpload::make('imageable')
+                    ->label('Shelter Image')
+                    ->image()
+                    ->directory('shelters')
+                    ->multiple()
+                    ->maxParallelUploads(1)
+                    ->nullable()
+                    ->disk('public')
+                    ->reactive()
+                    ->afterSave(function ($state, callable $set) {
+                        if ($state) {
+                            foreach ($state as $file) {
+                                // Tároljuk a fájlt
+                                $path = $file->store('shelters', 'public');
+            
+                                // Kép létrehozása az Image táblában (imageable_id = null)
+                                Image::create([
+                                    'path' => $path,
+                                    'imageable_type' => Shelter::class,
+                                    'imageable_id' => null, // Ideiglenesen null marad
+                                ]);
+                            }
+                            $set('imageable', []); // Ürítse ki az 'imageable' mezőt
                         }
-                       
-                    }
-                })
-                
-                                        
+                    })
             ]);
     }
-    public static function table(Table $table): Table
+        public static function table(Table $table): Table
     {
         return $table
             ->columns([ 
